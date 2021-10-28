@@ -48,13 +48,12 @@ def getSubwayLines(key):
     return subway_lines
     
 def getStops(lineID, key):
-    
-    
     r = requests.get(f"https://api-v3.mbta.com/stops?filter%5Broute%5D={lineID}", headers={'x-api-key': key})
     
     stops = r.json()['data']
 
-    return stops    
+    return stops
+    
 def main():
     # read in my API key. Keep it secret, keep it safe.
     f = open('key.txt', 'r')
@@ -64,9 +63,39 @@ def main():
     
    
     subway_lines = getSubwayLines(key)
-            
+        
+    lines_to_stops = dict()    
     for line in subway_lines:
-        print(line['attributes']['long_name'])
+        lineID = line['id']
+        
+        stops = getStops(lineID, key)
+        
+        lines_to_stops[lineID] = stops
+        
+        
+        
+    # find the maximum and minimum number of stops
+    max_stops_line = lineID
+    max_stops = len(lines_to_stops[lineID])
+    
+    min_stops_line = lineID        
+    min_stops = len(lines_to_stops[lineID])    
+        
+    for key in lines_to_stops.keys():
+        num_stops = len(lines_to_stops[key])  
+        
+        if num_stops > max_stops:
+            max_stops = num_stops
+            max_stops_line = key
+            
+        if num_stops < min_stops:
+            min_stops = num_stops
+            min_stops_line = key
+        
+        
+    print(f'Line with most stops: {max_stops_line}, number of stops {max_stops}')
+    print(f'Line with least stops: {min_stops_line}, number of stops {min_stops}')
+        
         
 
 
