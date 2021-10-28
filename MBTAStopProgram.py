@@ -48,21 +48,63 @@ def getSubwayLines(key):
     return subway_lines
     
 def getStops(lineID, key):
+    """
+    Gets the stops associated with a certain line
+
+    Parameters
+    ----------
+    lineID : string
+        The line id.
+    key : string
+        Api key.
+
+    Returns
+    -------
+    stops : list of dictionaries
+        Returns a list of dictionaries with each stop associated with the line in question.
+
+    """
+    # Use f formatting to insert the id into the request. Have the website do the filtering even though it's a lot of back and forth. 
+    # This is because there are so many stops, the majority of which are bus stops that it's easier to have the filtering done by the 
+    # api than write the code for it. 
     r = requests.get(f"https://api-v3.mbta.com/stops?filter%5Broute%5D={lineID}", headers={'x-api-key': key})
     
+    # just return the relevant information
     stops = r.json()['data']
-
     return stops
     
 
 def findMinAndMaxStopLines(lineID, lines_to_stops):
-    # find the maximum and minimum number of stops
+    """
+    Finds the lines with the most and least amount of stops
+
+    Parameters
+    ----------
+    lineID : string
+        The starting lineID.
+    lines_to_stops : dictionary
+        A dictionary whose keys are the line ids and whose entries are lists of stops
+
+    Returns
+    -------
+    max_stops_line : string
+        The line id of the line with most stops.
+    max_stops : int
+        The number of stops for the line with the most stops.
+    min_stops_line : string
+        The line id of the line with the fewest stops.
+    min_stops : int
+        The number of stops in the smallest line.
+
+    """
+    # Use the given Id to establish a baseline
     max_stops_line = lineID
     max_stops = len(lines_to_stops[lineID])
     
     min_stops_line = lineID        
     min_stops = len(lines_to_stops[lineID])    
         
+    # Iterate through all stops to find the information we need
     for key in lines_to_stops.keys():
         num_stops = len(lines_to_stops[key])  
         
@@ -78,23 +120,88 @@ def findMinAndMaxStopLines(lineID, lines_to_stops):
 
 
 def findStopNameToLines(lines_to_stops):
+    """
+    Creates a dictionary where the keys are stop names and the entries are a list of lines that stop services.
+
+    Parameters
+    ----------
+    lines_to_stops : dictionary
+        A dictionary of lines and their associated stops.
+
+    Returns
+    -------
+    stop_name_to_lines : dictionary
+        A dictionary of stops and their associated lines.
+
+    """
+    # Make the empty dictioanry
     stop_name_to_lines = dict()
+    
+    # Go through all the lines
     for key in lines_to_stops.keys():
          
+        # for each line get each stop
          for stop in lines_to_stops[key]:
              stop_name = stop['attributes']['name']
              
+             # If the stop already exists in the dictionary, append the line to its list
              if stop_name in stop_name_to_lines:
                  stop_name_to_lines[stop_name].append(key)
+             # else, make a new list with only the current line.
              else:
                  stop_name_to_lines[stop_name] = [key]
                  
     return stop_name_to_lines
 
+def FindRouteDriver(start_stop, end_stop, lines_to_stops, stop_name_to_lines):
+    """
+    Driver method for the FindRoute method which prints the route between two stops
 
+    Parameters
+    ----------
+    start_stop : string
+        The name of the starting stop.
+    end_stop : string
+        The name of the ending stop.
+    lines_to_stops : Dictionary
+        Dictionary of lines to list of stops.
+    stop_name_to_lines : Dictionary
+        Dictionary of stops to list of lines.
+
+    Returns
+    -------
+    None.
+
+    """
+    
+    start_routes = stop_name_to_lines[start_stop]
+    end_routes = stop_name_to_lines[end_stop]
+    
+    FindRoute(start_routes, end_routes, [], lines_to_stops, stop_name_to_lines)
              
 def FindRoute(curr_routes, end_routes, previous_routes, lines_to_stops, stop_name_to_lines):
-    
+    """
+    Prints the route between two stops
+
+    Parameters
+    ----------
+    curr_routes : list 
+        List of routes that can be accessed from current route.
+    end_routes : list
+        List of routes that can be accesed from ending stop.
+    previous_routes : List
+        List of previously visited routes.
+    lines_to_stops : Dictionary
+        Dictionary of lines to list of stops.
+    stop_name_to_lines : Dictionary
+        Dictionary of stops to list of lines.
+
+    Returns
+    -------
+    TYPE
+        DESCRIPTION.
+
+    """
     for end_route in end_routes:
         if end_route in curr_routes:
             print(*previous_routes, sep=', ', end=' ')
@@ -148,17 +255,16 @@ def main():
         
     # Make a dictionary with the stop name and all associated lines 
     stop_name_to_lines = findStopNameToLines(lines_to_stops)
-      
+       
+    # Print all stops that connect multiple lines with the lines they connect
     for stop_name in stop_name_to_lines.keys():
         if len(stop_name_to_lines[stop_name]) > 1:
             print(stop_name + ' connects lines ', end = '')
             print(*stop_name_to_lines[stop_name], sep=', ')
 
     
-    start_stop = 'Wonderland'
-    
-    end_stop = 'Oak Grove'
-    
+   
+    # Ask user to enter in the stops they are leaving from and going to
     print('\nEnter the stop you are departing from: ')
     start_stop = input()
     
@@ -167,6 +273,7 @@ def main():
     end_stop = input()
     
     
+    # Check the input to see if it's a known stop
     if start_stop not in stop_name_to_lines:
         print('Start stop not found.')
         return
@@ -175,13 +282,9 @@ def main():
         print('End stop not found.')
         return
     
-    start_routes = stop_name_to_lines[start_stop]
-    
-    end_routes = stop_name_to_lines[end_stop]
 
-
-    
-    FindRoute(start_routes, end_routes, [], lines_to_stops, stop_name_to_lines)
+    # Finds and prints the route between the stops
+    FindRouteDriver(start_stop, end_stop, lines_to_stops, stop_name_to_lines)
 
  
 
