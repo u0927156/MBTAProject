@@ -202,24 +202,27 @@ def FindRoute(curr_routes, end_routes, previous_routes, lines_to_stops, stop_nam
         DESCRIPTION.
 
     """
+    # Check if the route has been found
     for end_route in end_routes:
         if end_route in curr_routes:
-            print(*previous_routes, sep=', ', end=' ')
+            print(*previous_routes, sep=' ', end=' ')
             print(end_route)
             return previous_routes.append(end_route)
         
-    for curr_route in curr_routes:
     
+    for curr_route in curr_routes:
+        # Get all routes the current routes connects to.
         curr_connects_to = set()
         for stops in lines_to_stops[curr_route]:
             stop_name = stops['attributes']['name']
             
             for line in stop_name_to_lines[stop_name]:
-                if line not in curr_routes:
+                # Don't look at previous routes or the current route to prevent looping. 
+                if line not in curr_routes and line not in previous_routes:
                     curr_connects_to.add(line)
                 
         
-                
+        # append the previous route
         previous_routes.append(curr_route)
         return FindRoute(curr_connects_to, end_routes, previous_routes, lines_to_stops, stop_name_to_lines)
     
