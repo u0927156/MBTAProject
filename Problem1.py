@@ -31,11 +31,13 @@ else:
     
 data = r.json()['data']
 
-subway = []
+subway_lines = []
 
 for datum in data:
     
     if datum['attributes']['type'] == 0 or datum['attributes']['type'] == 1:
-        subway.append(datum)
+        subway_lines.append(datum)
         
         
+for line in subway_lines:
+    print(line['attributes']['long_name'])
